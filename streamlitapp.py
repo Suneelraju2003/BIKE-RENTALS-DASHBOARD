@@ -1,3 +1,4 @@
+
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -53,6 +54,16 @@ if page == "Insights & Model Validation":
         fig1 = px.line(hourly_demand, x='hr', y='cnt', color='Day Type', title='Hourly Demand Patterns', color_discrete_sequence=px.colors.qualitative.Vivid)
         st.plotly_chart(fig1, use_container_width=True)
 
+        st.subheader("Average Demand by Month")
+        monthly_demand = df_final.groupby('mnth')['cnt'].mean().reset_index()
+        fig_month = px.bar(monthly_demand, x='mnth', y='cnt', title='Monthly Rental Trends', color='cnt', color_continuous_scale='Viridis')
+        st.plotly_chart(fig_month, use_container_width=True)
+
+        st.subheader("Average Demand by Weekday")
+        weekday_demand = df_final.groupby('weekday')['cnt'].mean().reset_index()
+        fig_weekday = px.bar(weekday_demand, x='weekday', y='cnt', title='Weekday Rental Trends (0=Sun, 6=Sat)', color='cnt', color_continuous_scale='Cividis')
+        st.plotly_chart(fig_weekday, use_container_width=True)
+
     with tab2:
         st.subheader("Demand Distribution across Weather Conditions")
         df_plot_weather = df_final.copy()
@@ -74,23 +85,12 @@ if page == "Insights & Model Validation":
 
     with tab4:
         st.subheader("Feature Correlation Heatmap")
-
-        # ✅ FIXED PART (ONLY CHANGE)
+        # ✅ FIXED PART
         df_corr_data = df_final.select_dtypes(include=[np.number]).copy()
         df_corr_data = df_corr_data.apply(pd.to_numeric, errors='coerce')
         df_corr_data = df_corr_data.dropna(axis=1, how='all')
-
         corr_matrix = df_corr_data.corr()
-
-        fig_corr = go.Figure(
-            data=go.Heatmap(
-                z=corr_matrix.values,
-                x=corr_matrix.columns,
-                y=corr_matrix.index,
-                colorscale='RdBu_r'
-            )
-        )
-
+        fig_corr = go.Figure(data=go.Heatmap(z=corr_matrix.values, x=corr_matrix.columns, y=corr_matrix.index, colorscale='RdBu_r'))
         st.plotly_chart(fig_corr, use_container_width=True)
 
 elif page == "Interactive Prediction":
