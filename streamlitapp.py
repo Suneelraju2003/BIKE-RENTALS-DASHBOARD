@@ -38,8 +38,8 @@ if page == "Insights & Model Performance":
     st.title("🚴‍♀️ Bike Sharing Demand Prediction: Insights & Model Performance")
     st.write("This dashboard provides insights into bike rental demand and evaluates the performance of different machine learning models.")
 
-    st.markdown("---<br>
-    <h2 style='text-align: center; color: #4CAF50;'>Key Performance Indicators</h2>", unsafe_allow_html=True)
+    st.markdown("""---
+    <h2 style='text-align: center; color: #4CAF50;'>Key Performance Indicators</h2>""", unsafe_allow_html=True)
     
     # KPI Cards
     col1, col2, col3 = st.columns(3)
