@@ -160,4 +160,4 @@ elif page == "Interactive Prediction":
 
         res = model.predict(input_data)[0]
 
-        st.success(f"Predicted Hourly Rental Demand: {int(res)} units")
+        st.success(f"Predicted Rental Demand: {int(res)} units")
