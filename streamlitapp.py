@@ -75,9 +75,9 @@ if page == "Insights & Model Validation":
 
     with tab4:
         st.subheader("Feature Correlation Heatmap")
-        # Strict numeric filtering to avoid ValueError in pandas .corr()
-        numeric_cols_only = df_final.select_dtypes(include=[np.number])
-        corr_matrix = numeric_cols_only.corr()
+        # Force selection of numbers AND explicit float conversion to prevent Arrow/Pandas casting errors
+        df_corr_data = df_final.select_dtypes(include=[np.number]).astype(float)
+        corr_matrix = df_corr_data.corr()
         fig_corr = go.Figure(data=go.Heatmap(z=corr_matrix.values, x=corr_matrix.columns, y=corr_matrix.index, colorscale='RdBu_r'))
         st.plotly_chart(fig_corr, use_container_width=True)
 
