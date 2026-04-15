@@ -45,7 +45,7 @@ if page == "Insights & Model Validation":
     with col4: st.metric("RMSE", "37.46")
     with col5: st.metric("Avg Hourly Rentals", f"{df_final['cnt'].mean():.0f}")
 
-    tab1, tab2, tab3 = st.tabs(["Demand Patterns", "Environmental Impact", "Model Validation"])
+    tab1, tab2, tab3, tab4 = st.tabs(["Demand Patterns", "Environmental Impact", "Model Validation", "Correlation Analysis"])
 
     with tab1:
         st.subheader("Hourly Bike Rental Demand: Working Day vs No Work Day")
@@ -73,6 +73,14 @@ if page == "Insights & Model Validation":
         }).set_index('Model')
         st.dataframe(comparison_df)
 
+    with tab4:
+        st.subheader("Feature Correlation Heatmap")
+        # Force selection of numbers AND explicit float conversion to prevent Arrow/Pandas casting errors
+        df_corr_data = df_final.select_dtypes(include=[np.number]).astype(float)
+        corr_matrix = df_corr_data.corr()
+        fig_corr = go.Figure(data=go.Heatmap(z=corr_matrix.values, x=corr_matrix.columns, y=corr_matrix.index, colorscale='RdBu_r'))
+        st.plotly_chart(fig_corr, use_container_width=True)
+
 elif page == "Interactive Prediction":
     st.title("🧠 Demand Prediction Engine")
     col1, col2, col3 = st.columns(3)
@@ -92,4 +100,4 @@ elif page == "Interactive Prediction":
             if f not in input_data.columns: input_data[f] = 0
         input_data = input_data.reindex(columns=model_features).fillna(0).astype(float)
         res = model.predict(input_data)[0]
-        st.success(f"Predicted Hourly Rental Demand: {int(res)} units")
+        st.success(f"Predicted Rental Demand: {int(res)} units")
