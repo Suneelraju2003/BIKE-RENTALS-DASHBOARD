@@ -40,7 +40,7 @@ if page == "Insights & Model Performance":
 
     st.markdown("""---
     <h2 style='text-align: center; color: #4CAF50;'>Key Performance Indicators</h2>""", unsafe_allow_html=True)
-    
+
     # KPI Cards
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -50,8 +50,8 @@ if page == "Insights & Model Performance":
     with col3:
         st.metric(label="Highest Hourly Demand", value=f"{df_final['cnt'].max():,}", delta_color="off")
 
-    st.markdown("---<br>
-    <h2 style='text-align: center; color: #4CAF50;'>Demand Patterns Visualizations</h2>", unsafe_allow_html=True)
+    st.markdown("""---
+    <h2 style='text-align: center; color: #4CAF50;'>Demand Patterns Visualizations</h2>""", unsafe_allow_html=True)
     st.write("Explore how various factors influence bike rental demand.")
 
     # Plot 1: Hourly Demand: Working Day vs Weekend
@@ -89,8 +89,8 @@ if page == "Insights & Model Performance":
                      opacity=0.3, color_discrete_sequence=['#ef553b'])
     st.plotly_chart(fig4, use_container_width=True)
 
-    st.markdown("---<br>
-    <h2 style='text-align: center; color: #4CAF50;'>Model Performance & Comparison</h2>", unsafe_allow_html=True)
+    st.markdown("""---
+    <h2 style='text-align: center; color: #4CAF50;'>Model Performance & Comparison</h2>""", unsafe_allow_html=True)
     st.write("A comparative analysis of Decision Tree, Random Forest, and Gradient Boosting models.")
 
     # Hardcoded comparison data from the notebook's final comparison table
@@ -121,8 +121,8 @@ if page == "Insights & Model Performance":
                            yaxis_title='Metric Value', xaxis_title='Model', legend_title="Metric")
     st.plotly_chart(fig_comp, use_container_width=True)
 
-    st.markdown("---<br>
-    <h2 style='text-align: center; color: #4CAF50;'>Feature Importance for Best Model (Gradient Boosting)</h2>", unsafe_allow_html=True)
+    st.markdown("""---
+    <h2 style='text-align: center; color: #4CAF50;'>Feature Importance for Best Model (Gradient Boosting)</h2>""", unsafe_allow_html=True)
     st.write("Top features driving the Gradient Boosting model's predictions.")
 
     # Hardcoded feature importance from the notebook's gb_feature_importance_df
@@ -143,8 +143,8 @@ elif page == "Interactive Prediction":
     st.title("🧠 Interactive Bike Rental Demand Prediction")
     st.write("Adjust the parameters below to predict bike rental demand. The model uses the most important features to make predictions.")
 
-    st.markdown("---<br>
-    <h2 style='text-align: center; color: #4CAF50;'>Input Features</h2>", unsafe_allow_html=True)
+    st.markdown("""---
+    <h2 style='text-align: center; color: #4CAF50;'>Input Features</h2>""", unsafe_allow_html=True)
 
     # Input widgets for features
     col1, col2, col3 = st.columns(3)
@@ -205,14 +205,14 @@ elif page == "Interactive Prediction":
     if temp_type == 'Cold': input_df['temp_type_Cold'] = 1
     elif temp_type == 'Hot': input_df['temp_type_Hot'] = 1
 
-    st.markdown("---<br>")
+    st.markdown("""---""")
     if st.button("Predict Bike Demand", type="primary"):
         prediction = model.predict(input_df)[0]
         st.success(f"Predicted Bike Rental Demand: **{int(prediction):,}** bikes")
         st.balloons()
 
-    st.markdown("---<br>
-    <h2 style='text-align: center; color: #4CAF50;'>References and Explanation</h2>", unsafe_allow_html=True)
+    st.markdown("""---
+    <h2 style='text-align: center; color: #4CAF50;'>References and Explanation</h2>""", unsafe_allow_html=True)
     st.write("This interactive prediction tool utilizes a Gradient Boosting Regressor model, fine-tuned and trained on an extensive bike rental dataset. The model has demonstrated robust performance with an R-squared score of approximately 0.95, indicating its strong capability to explain variance in rental demand.")
     st.write("Key drivers for the prediction include temporal features (hour, year, month, rush hour status), environmental conditions (temperature, humidity, windspeed), and categorical factors (season, weather situation, working day, holiday). All numerical inputs are normalized, and categorical choices are internally transformed using one-hot encoding to match the model's training parameters.")
     st.write("This tool is designed to offer an estimate of demand under specified conditions, providing valuable insights for operational planning.")
