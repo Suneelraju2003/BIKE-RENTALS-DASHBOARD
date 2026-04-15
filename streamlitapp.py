@@ -30,6 +30,11 @@ model_features = ['yr', 'mnth', 'hr', 'weekday', 'temp', 'atemp', 'hum', 'windsp
                   'weathersit_Moderate Rain/Snow', 'workingday_Working Day',
                   'holiday_Yes', 'temp_type_Cold', 'temp_type_Hot']
 
+# --- Ensure df_final has all expected model features, filling with 0 if missing ---
+for feature in model_features:
+    if feature not in df_final.columns:
+        df_final[feature] = 0
+
 # --- Streamlit UI Layout ---
 st.sidebar.title("Bike Rental Dashboard")
 page = st.sidebar.radio("Navigation", ["Insights & Model Performance", "Interactive Prediction"])
@@ -70,9 +75,13 @@ if page == "Insights & Model Performance":
 
     # --- Reconstruct 'season_category' for plotting ---
     df_final['season_category'] = 'fall' # 'fall' was the base case (dropped first)
-    df_final.loc[df_final['season_springer'] == 1, 'season_category'] = 'springer'
-    df_final.loc[df_final['season_summer'] == 1, 'season_category'] = 'summer'
-    df_final.loc[df_final['season_winter'] == 1, 'season_category'] = 'winter'
+    # Check if one-hot encoded columns exist and apply mapping
+    if 'season_springer' in df_final.columns:
+        df_final.loc[df_final['season_springer'] == 1, 'season_category'] = 'springer'
+    if 'season_summer' in df_final.columns:
+        df_final.loc[df_final['season_summer'] == 1, 'season_category'] = 'summer'
+    if 'season_winter' in df_final.columns:
+        df_final.loc[df_final['season_winter'] == 1, 'season_category'] = 'winter'
 
     # Plot 2: Average Demand by Season
     st.subheader("Average Bike Rentals per Season")
@@ -85,9 +94,13 @@ if page == "Insights & Model Performance":
 
     # --- Reconstruct 'weathersit_category' for plotting ---
     df_final['weathersit_category'] = 'Clear' # 'Clear' was the base case (dropped first)
-    df_final.loc[df_final['weathersit_Mist'] == 1, 'weathersit_category'] = 'Mist'
-    df_final.loc[df_final['weathersit_Light Rain/Snow'] == 1, 'weathersit_category'] = 'Light Rain/Snow'
-    df_final.loc[df_final['weathersit_Moderate Rain/Snow'] == 1, 'weathersit_category'] = 'Moderate Rain/Snow'
+    # Check if one-hot encoded columns exist and apply mapping
+    if 'weathersit_Mist' in df_final.columns:
+        df_final.loc[df_final['weathersit_Mist'] == 1, 'weathersit_category'] = 'Mist'
+    if 'weathersit_Light Rain/Snow' in df_final.columns:
+        df_final.loc[df_final['weathersit_Light Rain/Snow'] == 1, 'weathersit_category'] = 'Light Rain/Snow'
+    if 'weathersit_Moderate Rain/Snow' in df_final.columns:
+        df_final.loc[df_final['weathersit_Moderate Rain/Snow'] == 1, 'weathersit_category'] = 'Moderate Rain/Snow'
 
     # Plot 3: Demand Distribution by Weather Situation
     st.subheader("Demand Distribution across Weather Conditions")
@@ -162,7 +175,6 @@ elif page == "Interactive Prediction":
     st.markdown("""---
     <h2 style='text-align: center; color: #4CAF50;'>Input Features</h2>""", unsafe_allow_html=True)
 
-    # Input widgets for features
     col1, col2, col3 = st.columns(3)
 
     with col1:
