@@ -51,18 +51,25 @@ if page == "Insights & Model Validation":
         st.subheader("Hourly Bike Rental Demand: Working Day vs No Work Day")
         hourly_demand = df_final.groupby(['hr', 'workingday_Working Day'])['cnt'].mean().reset_index()
         hourly_demand['Day Type'] = hourly_demand['workingday_Working Day'].apply(lambda x: 'Working Day' if x == 1 else 'No work')
-        fig1 = px.line(hourly_demand, x='hr', y='cnt', color='Day Type', title='Hourly Demand Patterns', color_discrete_sequence=px.colors.qualitative.Vivid)
+        fig1 = px.line(hourly_demand, x='hr', y='cnt', color='Day Type', title='Hourly Demand Patterns')
         st.plotly_chart(fig1, use_container_width=True)
 
         st.subheader("Average Demand by Month")
         monthly_demand = df_final.groupby('mnth')['cnt'].mean().reset_index()
-        fig_month = px.bar(monthly_demand, x='mnth', y='cnt', title='Monthly Rental Trends', color='cnt', color_continuous_scale='Viridis')
-        st.plotly_chart(fig_month, use_container_width=True)
+        fig2 = px.bar(monthly_demand, x='mnth', y='cnt', title='Monthly Trends', color='cnt')
+        st.plotly_chart(fig2, use_container_width=True)
 
         st.subheader("Average Demand by Weekday")
         weekday_demand = df_final.groupby('weekday')['cnt'].mean().reset_index()
-        fig_weekday = px.bar(weekday_demand, x='weekday', y='cnt', title='Weekday Rental Trends (0=Sun, 6=Sat)', color='cnt', color_continuous_scale='Cividis')
-        st.plotly_chart(fig_weekday, use_container_width=True)
+        fig3 = px.bar(weekday_demand, x='weekday', y='cnt', title='Weekday Trends (0=Sun)', color='cnt')
+        st.plotly_chart(fig3, use_container_width=True)
+
+        st.subheader("Holiday vs Non-Holiday Demand")
+        is_holiday = 'holiday_Yes' if 'holiday_Yes' in df_final.columns else None
+        if is_holiday:
+             hol_demand = df_final.groupby(is_holiday)['cnt'].mean().reset_index()
+             fig4 = px.pie(hol_demand, values='cnt', names=is_holiday, title='Impact of Holidays on Avg Demand')
+             st.plotly_chart(fig4, use_container_width=True)
 
     with tab2:
         st.subheader("Demand Distribution across Weather Conditions")
@@ -70,8 +77,20 @@ if page == "Insights & Model Validation":
         df_plot_weather['weathersit_category'] = 'Clear'
         if 'weathersit_Mist' in df_plot_weather.columns: df_plot_weather.loc[df_plot_weather['weathersit_Mist'] == 1, 'weathersit_category'] = 'Mist'
         if 'weathersit_Light Snow' in df_plot_weather.columns: df_plot_weather.loc[df_plot_weather['weathersit_Light Snow'] == 1, 'weathersit_category'] = 'Light Snow'
-        fig_weather = px.box(df_plot_weather, x='weathersit_category', y='cnt', title='Weather Impact', color='weathersit_category')
-        st.plotly_chart(fig_weather, use_container_width=True)
+        fig5 = px.box(df_plot_weather, x='weathersit_category', y='cnt', title='Weather Impact', color='weathersit_category')
+        st.plotly_chart(fig5, use_container_width=True)
+
+        st.subheader("Humidity vs Rental Demand")
+        fig6 = px.scatter(df_final, x='hum', y='cnt', opacity=0.1, title='Humidity Impact')
+        st.plotly_chart(fig6, use_container_width=True)
+
+        st.subheader("Windspeed vs Rental Demand")
+        fig7 = px.scatter(df_final, x='windspeed', y='cnt', opacity=0.1, title='Windspeed Impact')
+        st.plotly_chart(fig7, use_container_width=True)
+
+        st.subheader("Temperature Distribution")
+        fig8 = px.histogram(df_final, x='temp', title='Distribution of Temperature', nbins=30)
+        st.plotly_chart(fig8, use_container_width=True)
 
     with tab3:
         st.subheader("Model Comparison")
@@ -105,10 +124,17 @@ elif page == "Interactive Prediction":
     with col3:
         se = st.selectbox("Season", ['springer', 'summer', 'fall', 'winter'])
         we = st.selectbox("Weather", ['Clear', 'Mist', 'Light Snow'])
-    
+        wd = st.selectbox("Working Day", ["Yes", "No"])
+
     if st.button("Run Prediction"):
         input_data = pd.DataFrame([{'yr': 2012, 'mnth': mnth, 'hr': hr, 'temp': te, 'hum': hu}])
-        for f in model_features: 
+        # One-hot encode working day for model input
+        if wd == "Yes": 
+            input_data['workingday_Working Day'] = 1
+        else:
+            input_data['workingday_Working Day'] = 0
+            
+        for f in model_features:
             if f not in input_data.columns: input_data[f] = 0
         input_data = input_data.reindex(columns=model_features).fillna(0).astype(float)
         res = model.predict(input_data)[0]
