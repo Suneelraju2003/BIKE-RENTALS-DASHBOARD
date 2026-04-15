@@ -58,7 +58,7 @@ if page == "Insights & Model Validation":
 
         st.subheader("Demand by Month")
         monthly_demand = df_final.groupby('mnth')['cnt'].mean().reset_index()
-        fig_month = px.bar(monthly_demand, x='mnth', y='cnt', title='Average Bike Rentals by Month', color='cnt', color_continuous_scale=px.colors.sequential.Plotly)
+        fig_month = px.bar(monthly_demand, x='mnth', y='cnt', title='Average Bike Rentals by Month', color='cnt', color_continuous_scale=px.colors.sequential.Plasma)
         st.plotly_chart(fig_month, use_container_width=True)
 
         st.subheader("Demand by Weekday")
@@ -77,7 +77,7 @@ if page == "Insights & Model Validation":
         weather_map = {1: 'Clear', 2: 'Mist', 3: 'Light Rain/Snow', 4: 'Heavy Rain/Snow'}
         # Reconstruct weathersit for plotting - assuming one-hot encoding implies original values
         df_plot_weather = df_final.copy()
-        df_plot_weather['weathersit_original'] = 'Clear' # Default
+        df_plot_weather.loc[df_plot_weather['weathersit_Clear'] == 1, 'weathersit_original'] = 'Clear' # Default
         df_plot_weather.loc[df_plot_weather['weathersit_Mist'] == 1, 'weathersit_original'] = 'Mist'
         df_plot_weather.loc[df_plot_weather['weathersit_Light Rain/Snow'] == 1, 'weathersit_original'] = 'Light Rain/Snow'
         df_plot_weather.loc[df_plot_weather['weathersit_Moderate Rain/Snow'] == 1, 'weathersit_original'] = 'Moderate Rain/Snow'
