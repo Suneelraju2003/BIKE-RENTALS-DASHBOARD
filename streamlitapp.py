@@ -74,13 +74,17 @@ if page == "Insights & Model Validation":
         st.plotly_chart(fig_temp, use_container_width=True)
 
         st.subheader("Demand Distribution across Weather Conditions")
-        weather_map = {1: 'Clear', 2: 'Mist', 3: 'Light Rain/Snow', 4: 'Heavy Rain/Snow'}
-        # Reconstruct weathersit for plotting - assuming one-hot encoding implies original values
         df_plot_weather = df_final.copy()
-        df_plot_weather.loc[df_plot_weather['weathersit_Clear'] == 1, 'weathersit_original'] = 'Clear' # Default
-        df_plot_weather.loc[df_plot_weather['weathersit_Mist'] == 1, 'weathersit_original'] = 'Mist'
-        df_plot_weather.loc[df_plot_weather['weathersit_Light Rain/Snow'] == 1, 'weathersit_original'] = 'Light Rain/Snow'
-        df_plot_weather.loc[df_plot_weather['weathersit_Moderate Rain/Snow'] == 1, 'weathersit_original'] = 'Moderate Rain/Snow'
+        # Initialize weathersit_original with 'Clear' as it's the implied base category
+        df_plot_weather['weathersit_original'] = 'Clear'
+
+        # Conditionally overwrite for other weather conditions if their respective OHE columns are 1
+        if 'weathersit_Mist' in df_plot_weather.columns:
+            df_plot_weather.loc[df_plot_weather['weathersit_Mist'] == 1, 'weathersit_original'] = 'Mist'
+        if 'weathersit_Light Rain/Snow' in df_plot_weather.columns:
+            df_plot_weather.loc[df_plot_weather['weathersit_Light Rain/Snow'] == 1, 'weathersit_original'] = 'Light Rain/Snow'
+        if 'weathersit_Moderate Rain/Snow' in df_plot_weather.columns:
+            df_plot_weather.loc[df_plot_weather['weathersit_Moderate Rain/Snow'] == 1, 'weathersit_original'] = 'Moderate Rain/Snow'
         
         fig_weather = px.box(df_plot_weather, x='weathersit_original', y='cnt', title='Demand Distribution across Weather Conditions', color='weathersit_original', color_discrete_sequence=px.colors.qualitative.Pastel)
         st.plotly_chart(fig_weather, use_container_width=True)
