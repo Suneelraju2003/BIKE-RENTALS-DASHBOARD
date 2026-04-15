@@ -22,8 +22,12 @@ def load_resources():
 
 df_final, model = load_resources()
 
-# Exact feature list from training
-model_features = ['yr', 'mnth', 'hr', 'weekday', 'temp', 'atemp', 'hum', 'windspeed', 'is_rush_hour',                  'season_springer', 'season_summer', 'season_winter',                  'weathersit_Light Rain/Snow', 'weathersit_Mist',                  'weathersit_Moderate Rain/Snow', 'workingday_Working Day',                  'holiday_Yes', 'temp_type_Cold', 'temp_type_Hot']
+# Dynamically get the exact feature names from the loaded preprocessed data
+# This ensures consistency with the model's training features
+# Recreate X from df_final to get the exact feature names used for training
+X_temp_for_features = df_final.drop(['cnt', 'casual', 'registered'], axis=1)
+model_features = X_temp_for_features.columns.tolist()
+del X_temp_for_features # Clean up temporary variable
 
 for feature in model_features:
     if feature not in df_final.columns:
