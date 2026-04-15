@@ -73,26 +73,30 @@ if page == "Insights & Model Validation":
         st.dataframe(comparison_df)
 
     with tab4:
-        st.subheader("Feature Correlation Heatmap")
+    st.subheader("Feature Correlation Heatmap")
 
-        # ✅ FIXED PART (ONLY CHANGE)
-        df_corr_data = df_final.select_dtypes(include=[np.number]).copy()
-        df_corr_data = df_corr_data.apply(pd.to_numeric, errors='coerce')
-        df_corr_data = df_corr_data.dropna(axis=1, how='all')
+    # 🔥 FORCE full conversion to pandas + numpy (kills Arrow issue completely)
+    df_corr_data = df_final.select_dtypes(include=[np.number]).copy()
 
-        corr_matrix = df_corr_data.corr()
+    # Convert to numpy first, then back to DataFrame (most stable fix)
+    df_corr_data = pd.DataFrame(
+        df_corr_data.to_numpy(),
+        columns=df_corr_data.columns
+    )
 
-        fig_corr = go.Figure(
-            data=go.Heatmap(
-                z=corr_matrix.values,
-                x=corr_matrix.columns,
-                y=corr_matrix.index,
-                colorscale='RdBu_r'
-            )
+    # Now correlation (safe)
+    corr_matrix = df_corr_data.corr()
+
+    fig_corr = go.Figure(
+        data=go.Heatmap(
+            z=corr_matrix.values,
+            x=corr_matrix.columns,
+            y=corr_matrix.index,
+            colorscale='RdBu_r'
         )
+    )
 
-        st.plotly_chart(fig_corr, use_container_width=True)
-
+    st.plotly_chart(fig_corr, use_container_width=True)
 elif page == "Interactive Prediction":
     st.title("🧠 Demand Prediction Engine")
     col1, col2, col3 = st.columns(3)
