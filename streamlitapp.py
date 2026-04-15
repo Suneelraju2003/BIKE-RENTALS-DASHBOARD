@@ -37,7 +37,7 @@ st.sidebar.title("Bike Rental Dashboard")
 page = st.sidebar.radio("Navigation", ["Insights & Model Validation", "Interactive Prediction"])
 
 if page == "Insights & Model Validation":
-    st.title("🚴\u200D♀️ Model Insights & Performance Validation")
+    st.title("🚴‍♀️ Model Insights & Performance Validation")
 
     st.subheader("Key Performance Indicators")
     col1, col2, col3, col4, col5 = st.columns(5)
@@ -47,8 +47,8 @@ if page == "Insights & Model Validation":
     with col4: st.metric("RMSE", "37.46")
     with col5: st.metric("Avg Hourly Rentals", f"{df_final['cnt'].mean():.0f}")
 
-    tab1, tab2, tab3 = st.tabs(["Demand Patterns", "Environmental Impact", "Model Validation"])
-    
+    tab1, tab2, tab3, tab4 = st.tabs(["Demand Patterns", "Environmental Impact", "Model Validation", "Correlation Analysis"])
+
     with tab1:
         st.subheader("Hourly Bike Rental Demand: Working Day vs No Work Day")
         hourly_demand = df_final.groupby(['hr', 'workingday_Working Day'])['cnt'].mean().reset_index()
@@ -75,18 +75,14 @@ if page == "Insights & Model Validation":
 
         st.subheader("Demand Distribution across Weather Conditions")
         df_plot_weather = df_final.copy()
-        # Initialize weathersit_original with 'Clear' as it's the implied base category
-        df_plot_weather['weathersit_original'] = 'Clear'
+        df_plot_weather['weathersit_category'] = 'Clear' # Base category for weathersit_original
 
-        # Conditionally overwrite for other weather conditions if their respective OHE columns are 1
         if 'weathersit_Mist' in df_plot_weather.columns:
-            df_plot_weather.loc[df_plot_weather['weathersit_Mist'] == 1, 'weathersit_original'] = 'Mist'
-        if 'weathersit_Light Rain/Snow' in df_plot_weather.columns:
-            df_plot_weather.loc[df_plot_weather['weathersit_Light Rain/Snow'] == 1, 'weathersit_original'] = 'Light Rain/Snow'
-        if 'weathersit_Moderate Rain/Snow' in df_plot_weather.columns:
-            df_plot_weather.loc[df_plot_weather['weathersit_Moderate Rain/Snow'] == 1, 'weathersit_original'] = 'Moderate Rain/Snow'
-        
-        fig_weather = px.box(df_plot_weather, x='weathersit_original', y='cnt', title='Demand Distribution across Weather Conditions', color='weathersit_original', color_discrete_sequence=px.colors.qualitative.Pastel)
+            df_plot_weather.loc[df_plot_weather['weathersit_Mist'] == 1, 'weathersit_category'] = 'Mist'
+        if 'weathersit_Light Snow' in df_plot_weather.columns: # Corrected to match df_final columns
+            df_plot_weather.loc[df_plot_weather['weathersit_Light Snow'] == 1, 'weathersit_category'] = 'Light Snow'
+
+        fig_weather = px.box(df_plot_weather, x='weathersit_category', y='cnt', title='Demand Distribution across Weather Conditions', color='weathersit_category', color_discrete_sequence=px.colors.qualitative.Pastel)
         st.plotly_chart(fig_weather, use_container_width=True)
 
     with tab3:
@@ -103,10 +99,34 @@ if page == "Insights & Model Validation":
         fig_imp = px.bar(feat_imp, x='Importance', y='Feature', orientation='h', title='Feature Importance for Gradient Boosting Model', color='Importance', color_continuous_scale=px.colors.sequential.Magma)
         st.plotly_chart(fig_imp, use_container_width=True)
 
+        st.subheader("Model Performance Comparison")
+        comparison_df = pd.DataFrame({
+            'Model': ['Decision Tree', 'Random Forest', 'Gradient Boosting'],
+            'MAE':   [28.38, 23.13, 22.63],
+            'RMSE':  [46.52, 39.19, 37.46],
+            'R2_Score': [0.9239, 0.9460, 0.9506],
+        }).set_index('Model')
+        st.dataframe(comparison_df)
+
+    with tab4: # Correlation Analysis
+        st.subheader("Feature Correlation Heatmap")
+        df_features_only = df_final.drop(columns=['cnt', 'casual', 'registered'], errors='ignore')
+        corr_matrix_streamlit = df_features_only.corr()
+
+        fig_corr = go.Figure(data=go.Heatmap(
+                       z=corr_matrix_streamlit.values,
+                       x=corr_matrix_streamlit.columns,
+                       y=corr_matrix_streamlit.index,
+                       colorscale='RdBu_r',
+                       zmin=-1, zmax=1
+                   ))
+        fig_corr.update_layout(title='Feature Correlation Matrix', height=700)
+        st.plotly_chart(fig_corr, use_container_width=True)
+
 elif page == "Interactive Prediction":
     st.title("🧠 Demand Prediction Engine")
     st.write("The year is preset to 2012 for the most current context.")
-    
+
     col1, col2, col3 = st.columns(3)
     with col1:
         mnth = st.slider("Month", 1, 12, 7)
@@ -119,29 +139,28 @@ elif page == "Interactive Prediction":
         wi = st.slider("Wind", 0.0, 1.0, 0.2)
     with col3:
         se = st.selectbox("Season", ['springer', 'summer', 'fall', 'winter'], index=2)
-        we = st.selectbox("Weather", ['Clear', 'Mist', 'Light Rain/Snow', 'Moderate Rain/Snow'], index=0)
+        we = st.selectbox("Weather", ['Clear', 'Mist', 'Light Snow'], index=0) # Corrected weather options
         wd = st.selectbox("Working Day?", ['Working Day', 'No work'], index=0)
         ho = st.selectbox("Holiday?", ['No', 'Yes'], index=0)
         tt = st.selectbox("Temp Type", ['Cold', 'Mild', 'Hot'], index=1)
 
     irh = 1 if wd == 'Working Day' and ((7 <= hr <= 9) or (16 <= hr <= 19)) else 0
-    
+
     input_data = {
-        'yr': 2012.0, 'mnth': float(mnth), 'hr': int(hr), 'weekday': int(wk), 
-        'temp': float(te), 'atemp': float(at), 'hum': float(hu), 'windspeed': float(wi), 
+        'yr': 2012.0, 'mnth': float(mnth), 'hr': int(hr), 'weekday': int(wk),
+        'temp': float(te), 'atemp': float(at), 'hum': float(hu), 'windspeed': float(wi),
         'is_rush_hour': int(irh)
     }
-    
+
     input_df = pd.DataFrame([input_data])
-    for f in model_features: 
+    for f in model_features:
         if f not in input_df.columns: input_df[f] = 0
-    
+
     if se == 'springer': input_df['season_springer'] = 1
     elif se == 'summer': input_df['season_summer'] = 1
     elif se == 'winter': input_df['season_winter'] = 1
     if we == 'Mist': input_df['weathersit_Mist'] = 1
-    elif we == 'Light Rain/Snow': input_df['weathersit_Light Rain/Snow'] = 1
-    elif we == 'Moderate Rain/Snow': input_df['weathersit_Moderate Rain/Snow'] = 1
+    elif we == 'Light Snow': input_df['weathersit_Light Snow'] = 1 # Corrected weather options
     if wd == 'Working Day': input_df['workingday_Working Day'] = 1
     if ho == 'Yes': input_df['holiday_Yes'] = 1
     if tt == 'Cold': input_df['temp_type_Cold'] = 1
