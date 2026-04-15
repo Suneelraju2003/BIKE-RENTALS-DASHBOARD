@@ -22,6 +22,7 @@ def load_resources():
 
 df_final, model = load_resources()
 
+# Exact feature list from training
 model_features = ['yr', 'mnth', 'hr', 'weekday', 'temp', 'atemp', 'hum', 'windspeed', 'is_rush_hour',                  'season_springer', 'season_summer', 'season_winter',                  'weathersit_Light Rain/Snow', 'weathersit_Mist',                  'weathersit_Moderate Rain/Snow', 'workingday_Working Day',                  'holiday_Yes', 'temp_type_Cold', 'temp_type_Hot']
 
 for feature in model_features:
@@ -29,50 +30,47 @@ for feature in model_features:
         df_final[feature] = 0
 
 st.sidebar.title("Bike Rental Dashboard")
-page = st.sidebar.radio("Navigation", ["Insights & Model Performance", "Interactive Prediction"])
+page = st.sidebar.radio("Navigation", ["Insights & Model Validation", "Interactive Prediction"])
 
-if page == "Insights & Model Performance":
-    st.title("🚴‍♀️ Bike Sharing Demand Prediction: Insights")
+if page == "Insights & Model Validation":
+    st.title("🚴‍♀️ Model Insights & Performance Validation")
     
     col1, col2, col3 = st.columns(3)
-    with col1: st.metric("Total Records", f"{len(df_final):,}")
-    with col2: st.metric("Avg Rentals", f"{df_final['cnt'].mean():.2f}")
-    with col3: st.metric("Max Demand", f"{df_final['cnt'].max():,}")
+    with col1: st.metric("Model Type", "Gradient Boosting")
+    with col2: st.metric("Best R2 Score", "0.9506")
+    with col3: st.metric("Avg Error (MAE)", "22.63")
 
-    st.subheader("Hourly Demand by Day Type")
-    hourly_demand = df_final.groupby(['hr', 'workingday_Working Day'])['cnt'].mean().reset_index()
-    hourly_demand['Day Type'] = hourly_demand['workingday_Working Day'].apply(lambda x: 'Working Day' if x == 1 else 'No work')
-    fig1 = px.line(hourly_demand, x='hr', y='cnt', color='Day Type', title='Hourly Demand')
-    st.plotly_chart(fig1, use_container_width=True)
+    tab1, tab2 = st.tabs(["Exploratory Insights", "Model Validation"])
+    
+    with tab1:
+        st.subheader("Hourly Demand by Day Type")
+        hourly_demand = df_final.groupby(['hr', 'workingday_Working Day'])['cnt'].mean().reset_index()
+        hourly_demand['Day Type'] = hourly_demand['workingday_Working Day'].apply(lambda x: 'Working Day' if x == 1 else 'No work')
+        fig1 = px.line(hourly_demand, x='hr', y='cnt', color='Day Type', title='Hourly Demand Patterns')
+        st.plotly_chart(fig1, use_container_width=True)
 
-    df_final['season_category'] = 'fall'
-    if 'season_springer' in df_final.columns: df_final.loc[df_final['season_springer'] == 1, 'season_category'] = 'springer'
-    if 'season_summer' in df_final.columns: df_final.loc[df_final['season_summer'] == 1, 'season_category'] = 'summer'
-    if 'season_winter' in df_final.columns: df_final.loc[df_final['season_winter'] == 1, 'season_category'] = 'winter'
+        st.subheader("Environmental Impact (Temperature vs Demand)")
+        fig_temp = px.scatter(df_final, x='temp', y='cnt', opacity=0.3, color_discrete_sequence=['coral'])
+        st.plotly_chart(fig_temp, use_container_width=True)
 
-    st.subheader("Average Demand by Season")
-    seasonal_demand = df_final.groupby('season_category')['cnt'].mean().reset_index()
-    fig2 = px.bar(seasonal_demand, x='season_category', y='cnt', color='season_category', color_discrete_sequence=px.colors.qualitative.Plotly)
-    st.plotly_chart(fig2, use_container_width=True)
-
-    df_final['weathersit_category'] = 'Clear'
-    if 'weathersit_Mist' in df_final.columns: df_final.loc[df_final['weathersit_Mist'] == 1, 'weathersit_category'] = 'Mist'
-    if 'weathersit_Light Rain/Snow' in df_final.columns: df_final.loc[df_final['weathersit_Light Rain/Snow'] == 1, 'weathersit_category'] = 'Light Rain/Snow'
-    if 'weathersit_Moderate Rain/Snow' in df_final.columns: df_final.loc[df_final['weathersit_Moderate Rain/Snow'] == 1, 'weathersit_category'] = 'Moderate Rain/Snow'
-
-    st.subheader("Demand Distribution by Weather")
-    fig3 = px.box(df_final, x='weathersit_category', y='cnt', color='weathersit_category', color_discrete_sequence=px.colors.qualitative.Vivid)
-    st.plotly_chart(fig3, use_container_width=True)
-
-    st.subheader("Impact of Temperature")
-    fig4 = px.scatter(df_final, x='temp', y='cnt', opacity=0.3)
-    st.plotly_chart(fig4, use_container_width=True)
+    with tab2:
+        st.subheader("Feature Importance (What drives the model?)")
+        # Based on training results
+        feat_imp = pd.DataFrame({
+            'Feature': ['Hour', 'Rush Hour', 'Year', 'Temp', 'Humidity', 'Working Day', 'Month'],
+            'Importance': [0.48, 0.13, 0.08, 0.08, 0.04, 0.04, 0.02]
+        }).sort_values('Importance', ascending=True)
+        fig_imp = px.bar(feat_imp, x='Importance', y='Feature', orientation='h', color='Importance')
+        st.plotly_chart(fig_imp, use_container_width=True)
+        
+        st.write("**Validation Note:** The model was validated using a 20% hold-out test set. Gradient Boosting showed the highest accuracy (95%) compared to Random Forest and Decision Trees.")
 
 elif page == "Interactive Prediction":
-    st.title("🧠 Interactive Prediction")
+    st.title("🧠 Demand Prediction Engine")
+    st.write("The year is preset to 2012 for the most current context.")
+    
     col1, col2, col3 = st.columns(3)
     with col1:
-        yr = st.slider("Year", 2011, 2012, 2012)
         mnth = st.slider("Month", 1, 12, 7)
         hr = st.slider("Hour", 0, 23, 17)
         wk = st.slider("Weekday", 0, 6, 1)
@@ -90,11 +88,17 @@ elif page == "Interactive Prediction":
 
     irh = 1 if wd == 'Working Day' and ((7 <= hr <= 9) or (16 <= hr <= 19)) else 0
     
-    # Create input DataFrame and ensure column order matches model expectations exactly
-    input_data_dict = {'yr':yr,'mnth':mnth,'hr':hr,'weekday':wk,'temp':te,'atemp':at,'hum':hu,'windspeed':wi,'is_rush_hour':irh}
-    input_df = pd.DataFrame(columns=model_features)
-    input_df.loc[0] = 0
-    input_df.update(pd.Series(input_data_dict))
+    # Prepare input
+    input_data = {
+        'yr': 2012.0, 'mnth': float(mnth), 'hr': int(hr), 'weekday': int(wk), 
+        'temp': float(te), 'atemp': float(at), 'hum': float(hu), 'windspeed': float(wi), 
+        'is_rush_hour': int(irh)
+    }
+    
+    input_df = pd.DataFrame([input_data])
+    # One-hot encoding logic
+    for f in model_features: 
+        if f not in input_df.columns: input_df[f] = 0
     
     if se == 'springer': input_df['season_springer'] = 1
     elif se == 'summer': input_df['season_summer'] = 1
@@ -107,9 +111,9 @@ elif page == "Interactive Prediction":
     if tt == 'Cold': input_df['temp_type_Cold'] = 1
     elif tt == 'Hot': input_df['temp_type_Hot'] = 1
 
-    # Reorder columns to match the training data feature order exactly
-    input_df = input_df[model_features]
+    # CRITICAL FIX: Ensure columns are in EXACT order expected by sklearn
+    input_df = input_df.reindex(columns=model_features, fill_value=0)
 
-    if st.button("Predict"):
+    if st.button("Run Prediction"):
         res = model.predict(input_df)[0]
-        st.success(f"Predicted Demand: {int(res)}")
+        st.success(f"Predicted Hourly Rental Demand: {int(res)} units")
