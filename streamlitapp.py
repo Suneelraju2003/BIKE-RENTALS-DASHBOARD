@@ -56,8 +56,12 @@ if page == "Insights & Model Performance":
 
     # Plot 1: Hourly Demand: Working Day vs Weekend
     st.subheader("Hourly Bike Rental Demand: Working Day vs No Work Day")
-    hourly_demand = df_final.groupby(['hr', 'workingday'])['cnt'].mean().reset_index()
-    fig1 = px.line(hourly_demand, x='hr', y='cnt', color='workingday',
+    # Use 'workingday_Working Day' directly to reflect the one-hot encoding
+    hourly_demand = df_final.groupby(['hr', 'workingday_Working Day'])['cnt'].mean().reset_index()
+    # Rename 'workingday_Working Day' to 'Day Type' for better plotting labels
+    hourly_demand['Day Type'] = hourly_demand['workingday_Working Day'].apply(lambda x: 'Working Day' if x == 1 else 'No work')
+
+    fig1 = px.line(hourly_demand, x='hr', y='cnt', color='Day Type',
                    labels={'hr': 'Hour of the Day', 'cnt': 'Average Rental Count'},
                    title='Average Hourly Bike Rentals by Day Type',
                    color_discrete_map={'Working Day': '#1f77b4', 'No work': '#ff7f0e'})
