@@ -111,6 +111,9 @@ if page == "Insights & Model Validation":
     with tab4: # Correlation Analysis
         st.subheader("Feature Correlation Heatmap")
         df_features_only = df_final.drop(columns=['cnt', 'casual', 'registered'], errors='ignore')
+        # Explicitly convert all columns to float, coercing errors, then drop any columns that became all NaN
+        df_features_only = df_features_only.apply(pd.to_numeric, errors='coerce')
+        df_features_only = df_features_only.dropna(axis=1, how='all')
         corr_matrix_streamlit = df_features_only.corr()
 
         fig_corr = go.Figure(data=go.Heatmap(
