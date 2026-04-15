@@ -112,4 +112,4 @@ elif page == "Interactive Prediction":
             if f not in input_data.columns: input_data[f] = 0
         input_data = input_data.reindex(columns=model_features).fillna(0).astype(float)
         res = model.predict(input_data)[0]
-        st.success(f"Predicted Hourly Rental Demand: {int(res)} units")
+        st.success(f"Predicted Rental Demand: {int(res)} units")
