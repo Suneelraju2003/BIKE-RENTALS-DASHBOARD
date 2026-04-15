@@ -22,11 +22,7 @@ def load_resources():
 
 df_final, model = load_resources()
 
-model_features = ['yr', 'mnth', 'hr', 'weekday', 'temp', 'atemp', 'hum', 'windspeed', 'is_rush_hour',
-                  'season_springer', 'season_summer', 'season_winter',
-                  'weathersit_Light Rain/Snow', 'weathersit_Mist',
-                  'weathersit_Moderate Rain/Snow', 'workingday_Working Day',
-                  'holiday_Yes', 'temp_type_Cold', 'temp_type_Hot']
+model_features = ['yr', 'mnth', 'hr', 'weekday', 'temp', 'atemp', 'hum', 'windspeed', 'is_rush_hour',                  'season_springer', 'season_summer', 'season_winter',                  'weathersit_Light Rain/Snow', 'weathersit_Mist',                  'weathersit_Moderate Rain/Snow', 'workingday_Working Day',                  'holiday_Yes', 'temp_type_Cold', 'temp_type_Hot']
 
 for feature in model_features:
     if feature not in df_final.columns:
@@ -93,9 +89,12 @@ elif page == "Interactive Prediction":
         tt = st.selectbox("Temp Type", ['Cold', 'Mild', 'Hot'], index=1)
 
     irh = 1 if wd == 'Working Day' and ((7 <= hr <= 9) or (16 <= hr <= 19)) else 0
+    
+    # Create input DataFrame and ensure column order matches model expectations exactly
+    input_data_dict = {'yr':yr,'mnth':mnth,'hr':hr,'weekday':wk,'temp':te,'atemp':at,'hum':hu,'windspeed':wi,'is_rush_hour':irh}
     input_df = pd.DataFrame(columns=model_features)
     input_df.loc[0] = 0
-    input_df.update(pd.Series({'yr':yr,'mnth':mnth,'hr':hr,'weekday':wk,'temp':te,'atemp':at,'hum':hu,'windspeed':wi,'is_rush_hour':irh}))
+    input_df.update(pd.Series(input_data_dict))
     
     if se == 'springer': input_df['season_springer'] = 1
     elif se == 'summer': input_df['season_summer'] = 1
@@ -107,6 +106,9 @@ elif page == "Interactive Prediction":
     if ho == 'Yes': input_df['holiday_Yes'] = 1
     if tt == 'Cold': input_df['temp_type_Cold'] = 1
     elif tt == 'Hot': input_df['temp_type_Hot'] = 1
+
+    # Reorder columns to match the training data feature order exactly
+    input_df = input_df[model_features]
 
     if st.button("Predict"):
         res = model.predict(input_df)[0]
