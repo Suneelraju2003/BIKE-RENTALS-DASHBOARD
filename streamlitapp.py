@@ -38,32 +38,65 @@ page = st.sidebar.radio("Navigation", ["Insights & Model Validation", "Interacti
 
 if page == "Insights & Model Validation":
     st.title("🚴\u200D♀️ Model Insights & Performance Validation")
-    
-    col1, col2, col3 = st.columns(3)
+
+    st.subheader("Key Performance Indicators")
+    col1, col2, col3, col4, col5 = st.columns(5)
     with col1: st.metric("Model Type", "Gradient Boosting")
     with col2: st.metric("Best R2 Score", "0.9506")
     with col3: st.metric("Avg Error (MAE)", "22.63")
+    with col4: st.metric("RMSE", "37.46")
+    with col5: st.metric("Avg Hourly Rentals", f"{df_final['cnt'].mean():.0f}")
 
-    tab1, tab2 = st.tabs(["Exploratory Insights", "Model Validation"])
+    tab1, tab2, tab3 = st.tabs(["Demand Patterns", "Environmental Impact", "Model Validation"])
     
     with tab1:
-        st.subheader("Hourly Demand by Day Type")
+        st.subheader("Hourly Bike Rental Demand: Working Day vs No Work Day")
         hourly_demand = df_final.groupby(['hr', 'workingday_Working Day'])['cnt'].mean().reset_index()
         hourly_demand['Day Type'] = hourly_demand['workingday_Working Day'].apply(lambda x: 'Working Day' if x == 1 else 'No work')
-        fig1 = px.line(hourly_demand, x='hr', y='cnt', color='Day Type', title='Hourly Demand Patterns')
+        fig1 = px.line(hourly_demand, x='hr', y='cnt', color='Day Type', title='Hourly Demand Patterns', color_discrete_sequence=px.colors.qualitative.Vivid)
         st.plotly_chart(fig1, use_container_width=True)
 
-        st.subheader("Environmental Impact (Temperature vs Demand)")
-        fig_temp = px.scatter(df_final, x='temp', y='cnt', opacity=0.3, color_discrete_sequence=['coral'])
-        st.plotly_chart(fig_temp, use_container_width=True)
+        st.subheader("Demand by Month")
+        monthly_demand = df_final.groupby('mnth')['cnt'].mean().reset_index()
+        fig_month = px.bar(monthly_demand, x='mnth', y='cnt', title='Average Bike Rentals by Month', color='cnt', color_continuous_scale=px.colors.sequential.Plotly)
+        st.plotly_chart(fig_month, use_container_width=True)
+
+        st.subheader("Demand by Weekday")
+        weekday_map = {0: 'Sunday', 1: 'Monday', 2: 'Tuesday', 3: 'Wednesday', 4: 'Thursday', 5: 'Friday', 6: 'Saturday'}
+        df_final['weekday_name'] = df_final['weekday'].map(weekday_map)
+        weekday_demand = df_final.groupby('weekday_name')['cnt'].mean().reindex(weekday_map.values()).reset_index()
+        fig_weekday = px.bar(weekday_demand, x='weekday_name', y='cnt', title='Average Bike Rentals by Weekday', color='cnt', color_continuous_scale=px.colors.sequential.Sunset)
+        st.plotly_chart(fig_weekday, use_container_width=True)
 
     with tab2:
+        st.subheader("Impact of Temperature on Bike Rentals")
+        fig_temp = px.scatter(df_final, x='temp', y='cnt', opacity=0.3, color_discrete_sequence=['coral'], title='Impact of Temperature on Bike Rentals')
+        st.plotly_chart(fig_temp, use_container_width=True)
+
+        st.subheader("Demand Distribution across Weather Conditions")
+        weather_map = {1: 'Clear', 2: 'Mist', 3: 'Light Rain/Snow', 4: 'Heavy Rain/Snow'}
+        # Reconstruct weathersit for plotting - assuming one-hot encoding implies original values
+        df_plot_weather = df_final.copy()
+        df_plot_weather['weathersit_original'] = 'Clear' # Default
+        df_plot_weather.loc[df_plot_weather['weathersit_Mist'] == 1, 'weathersit_original'] = 'Mist'
+        df_plot_weather.loc[df_plot_weather['weathersit_Light Rain/Snow'] == 1, 'weathersit_original'] = 'Light Rain/Snow'
+        df_plot_weather.loc[df_plot_weather['weathersit_Moderate Rain/Snow'] == 1, 'weathersit_original'] = 'Moderate Rain/Snow'
+        
+        fig_weather = px.box(df_plot_weather, x='weathersit_original', y='cnt', title='Demand Distribution across Weather Conditions', color='weathersit_original', color_discrete_sequence=px.colors.qualitative.Pastel)
+        st.plotly_chart(fig_weather, use_container_width=True)
+
+    with tab3:
+        st.subheader("Model Performance Overview")
+        st.write("The Gradient Boosting Regressor was chosen as the optimal model for bike rental demand prediction based on its superior performance across key metrics. It achieved an R-squared score of 0.9506, indicating that it explains approximately 95% of the variance in bike rental demand. Its low Mean Absolute Error (22.63) and Root Mean Squared Error (37.46) demonstrate high accuracy in predicting rental counts.")
+        st.write("Hyperparameter tuning was performed, and while some models showed slight improvements, the default parameters of the ensemble methods proved highly effective, particularly for Random Forest. The Gradient Boosting model, after tuning, provided the best balance of accuracy and robustness.")
+
         st.subheader("Feature Importance (What drives the model?)")
+        # Based on training results, replace with actual if available from loaded model
         feat_imp = pd.DataFrame({
-            'Feature': ['Hour', 'Rush Hour', 'Year', 'Temp', 'Humidity', 'Working Day', 'Month'],
-            'Importance': [0.48, 0.13, 0.08, 0.08, 0.04, 0.04, 0.02]
+            'Feature': ['Hour', 'Rush Hour', 'Year', 'Temp', 'atemp', 'Humidity', 'Working Day', 'Month', 'Season'],
+            'Importance': [0.485, 0.137, 0.086, 0.083, 0.044, 0.036, 0.043, 0.018, 0.018] # Example values from the notebook's best GB model
         }).sort_values('Importance', ascending=True)
-        fig_imp = px.bar(feat_imp, x='Importance', y='Feature', orientation='h', color='Importance')
+        fig_imp = px.bar(feat_imp, x='Importance', y='Feature', orientation='h', title='Feature Importance for Gradient Boosting Model', color='Importance', color_continuous_scale=px.colors.sequential.Magma)
         st.plotly_chart(fig_imp, use_container_width=True)
 
 elif page == "Interactive Prediction":
@@ -115,4 +148,4 @@ elif page == "Interactive Prediction":
 
     if st.button("Run Prediction"):
         res = model.predict(input_df)[0]
-        st.success(f"Predicted Rental Demand: {int(res)} units")
+        st.success(f"Predicted Hourly Rental Demand: {int(res)} units")
