@@ -22,12 +22,10 @@ def load_resources():
 
 df_final, model = load_resources()
 
-# Dynamically get the exact feature names from the loaded preprocessed data
-# This ensures consistency with the model's training features
-# Recreate X from df_final to get the exact feature names used for training
+# Dynamically get the exact feature names
 X_temp_for_features = df_final.drop(['cnt', 'casual', 'registered'], axis=1)
 model_features = X_temp_for_features.columns.tolist()
-del X_temp_for_features # Clean up temporary variable
+del X_temp_for_features
 
 for feature in model_features:
     if feature not in df_final.columns:
@@ -56,122 +54,50 @@ if page == "Insights & Model Validation":
         fig1 = px.line(hourly_demand, x='hr', y='cnt', color='Day Type', title='Hourly Demand Patterns', color_discrete_sequence=px.colors.qualitative.Vivid)
         st.plotly_chart(fig1, use_container_width=True)
 
-        st.subheader("Demand by Month")
-        monthly_demand = df_final.groupby('mnth')['cnt'].mean().reset_index()
-        fig_month = px.bar(monthly_demand, x='mnth', y='cnt', title='Average Bike Rentals by Month', color='cnt', color_continuous_scale=px.colors.sequential.Plasma)
-        st.plotly_chart(fig_month, use_container_width=True)
-
-        st.subheader("Demand by Weekday")
-        weekday_map = {0: 'Sunday', 1: 'Monday', 2: 'Tuesday', 3: 'Wednesday', 4: 'Thursday', 5: 'Friday', 6: 'Saturday'}
-        df_final['weekday_name'] = df_final['weekday'].map(weekday_map)
-        weekday_demand = df_final.groupby('weekday_name')['cnt'].mean().reindex(weekday_map.values()).reset_index()
-        fig_weekday = px.bar(weekday_demand, x='weekday_name', y='cnt', title='Average Bike Rentals by Weekday', color='cnt', color_continuous_scale=px.colors.sequential.Sunset)
-        st.plotly_chart(fig_weekday, use_container_width=True)
-
     with tab2:
-        st.subheader("Impact of Temperature on Bike Rentals")
-        fig_temp = px.scatter(df_final, x='temp', y='cnt', opacity=0.3, color_discrete_sequence=['coral'], title='Impact of Temperature on Bike Rentals')
-        st.plotly_chart(fig_temp, use_container_width=True)
-
         st.subheader("Demand Distribution across Weather Conditions")
         df_plot_weather = df_final.copy()
-        df_plot_weather['weathersit_category'] = 'Clear' # Base category for weathersit_original
-
-        if 'weathersit_Mist' in df_plot_weather.columns:
-            df_plot_weather.loc[df_plot_weather['weathersit_Mist'] == 1, 'weathersit_category'] = 'Mist'
-        if 'weathersit_Light Snow' in df_plot_weather.columns: # Corrected to match df_final columns
-            df_plot_weather.loc[df_plot_weather['weathersit_Light Snow'] == 1, 'weathersit_category'] = 'Light Snow'
-
-        fig_weather = px.box(df_plot_weather, x='weathersit_category', y='cnt', title='Demand Distribution across Weather Conditions', color='weathersit_category', color_discrete_sequence=px.colors.qualitative.Pastel)
+        df_plot_weather['weathersit_category'] = 'Clear'
+        if 'weathersit_Mist' in df_plot_weather.columns: df_plot_weather.loc[df_plot_weather['weathersit_Mist'] == 1, 'weathersit_category'] = 'Mist'
+        if 'weathersit_Light Snow' in df_plot_weather.columns: df_plot_weather.loc[df_plot_weather['weathersit_Light Snow'] == 1, 'weathersit_category'] = 'Light Snow'
+        fig_weather = px.box(df_plot_weather, x='weathersit_category', y='cnt', title='Weather Impact', color='weathersit_category')
         st.plotly_chart(fig_weather, use_container_width=True)
 
     with tab3:
-        st.subheader("Model Performance Overview")
-        st.write("The Gradient Boosting Regressor was chosen as the optimal model for bike rental demand prediction based on its superior performance across key metrics. It achieved an R-squared score of 0.9506, indicating that it explains approximately 95% of the variance in bike rental demand. Its low Mean Absolute Error (22.63) and Root Mean Squared Error (37.46) demonstrate high accuracy in predicting rental counts.")
-        st.write("Hyperparameter tuning was performed, and while some models showed slight improvements, the default parameters of the ensemble methods proved highly effective, particularly for Random Forest. The Gradient Boosting model, after tuning, provided the best balance of accuracy and robustness.")
-
-        st.subheader("Feature Importance (What drives the model?)")
-        # Based on training results, replace with actual if available from loaded model
-        feat_imp = pd.DataFrame({
-            'Feature': ['Hour', 'Rush Hour', 'Year', 'Temp', 'atemp', 'Humidity', 'Working Day', 'Month', 'Season'],
-            'Importance': [0.485, 0.137, 0.086, 0.083, 0.044, 0.036, 0.043, 0.018, 0.018] # Example values from the notebook's best GB model
-        }).sort_values('Importance', ascending=True)
-        fig_imp = px.bar(feat_imp, x='Importance', y='Feature', orientation='h', title='Feature Importance for Gradient Boosting Model', color='Importance', color_continuous_scale=px.colors.sequential.Magma)
-        st.plotly_chart(fig_imp, use_container_width=True)
-
-        st.subheader("Model Performance Comparison")
+        st.subheader("Model Comparison")
         comparison_df = pd.DataFrame({
             'Model': ['Decision Tree', 'Random Forest', 'Gradient Boosting'],
-            'MAE':   [28.38, 23.13, 22.63],
-            'RMSE':  [46.52, 39.19, 37.46],
-            'R2_Score': [0.9239, 0.9460, 0.9506],
+            'MAE': [28.38, 23.13, 22.63],
+            'RMSE': [46.52, 39.19, 37.46],
+            'R2_Score': [0.9239, 0.9460, 0.9506]
         }).set_index('Model')
         st.dataframe(comparison_df)
 
-    with tab4: # Correlation Analysis
+    with tab4:
         st.subheader("Feature Correlation Heatmap")
-        df_features_only = df_final.drop(columns=['cnt', 'casual', 'registered'], errors='ignore')
-        # Explicitly convert all columns to float, coercing errors, then drop any columns that became all NaN
-        df_features_only = df_features_only.apply(pd.to_numeric, errors='coerce')
-        df_features_only = df_features_only.dropna(axis=1, how='all')
-        corr_matrix_streamlit = df_features_only.corr()
-
-        fig_corr = go.Figure(data=go.Heatmap(
-                       z=corr_matrix_streamlit.values,
-                       x=corr_matrix_streamlit.columns,
-                       y=corr_matrix_streamlit.index,
-                       colorscale='RdBu_r',
-                       zmin=-1, zmax=1
-                   ))
-        fig_corr.update_layout(title='Feature Correlation Matrix', height=700)
+        # Strict numeric filtering to avoid ValueError in pandas .corr()
+        numeric_cols_only = df_final.select_dtypes(include=[np.number])
+        corr_matrix = numeric_cols_only.corr()
+        fig_corr = go.Figure(data=go.Heatmap(z=corr_matrix.values, x=corr_matrix.columns, y=corr_matrix.index, colorscale='RdBu_r'))
         st.plotly_chart(fig_corr, use_container_width=True)
 
 elif page == "Interactive Prediction":
     st.title("🧠 Demand Prediction Engine")
-    st.write("The year is preset to 2012 for the most current context.")
-
     col1, col2, col3 = st.columns(3)
     with col1:
         mnth = st.slider("Month", 1, 12, 7)
         hr = st.slider("Hour", 0, 23, 17)
-        wk = st.slider("Weekday", 0, 6, 1)
     with col2:
         te = st.slider("Temp", 0.0, 1.0, 0.6)
-        at = st.slider("ATemp", 0.0, 1.0, 0.55)
         hu = st.slider("Hum", 0.0, 1.0, 0.6)
-        wi = st.slider("Wind", 0.0, 1.0, 0.2)
     with col3:
-        se = st.selectbox("Season", ['springer', 'summer', 'fall', 'winter'], index=2)
-        we = st.selectbox("Weather", ['Clear', 'Mist', 'Light Snow'], index=0) # Corrected weather options
-        wd = st.selectbox("Working Day?", ['Working Day', 'No work'], index=0)
-        ho = st.selectbox("Holiday?", ['No', 'Yes'], index=0)
-        tt = st.selectbox("Temp Type", ['Cold', 'Mild', 'Hot'], index=1)
-
-    irh = 1 if wd == 'Working Day' and ((7 <= hr <= 9) or (16 <= hr <= 19)) else 0
-
-    input_data = {
-        'yr': 2012.0, 'mnth': float(mnth), 'hr': int(hr), 'weekday': int(wk),
-        'temp': float(te), 'atemp': float(at), 'hum': float(hu), 'windspeed': float(wi),
-        'is_rush_hour': int(irh)
-    }
-
-    input_df = pd.DataFrame([input_data])
-    for f in model_features:
-        if f not in input_df.columns: input_df[f] = 0
-
-    if se == 'springer': input_df['season_springer'] = 1
-    elif se == 'summer': input_df['season_summer'] = 1
-    elif se == 'winter': input_df['season_winter'] = 1
-    if we == 'Mist': input_df['weathersit_Mist'] = 1
-    elif we == 'Light Snow': input_df['weathersit_Light Snow'] = 1 # Corrected weather options
-    if wd == 'Working Day': input_df['workingday_Working Day'] = 1
-    if ho == 'Yes': input_df['holiday_Yes'] = 1
-    if tt == 'Cold': input_df['temp_type_Cold'] = 1
-    elif tt == 'Hot': input_df['temp_type_Hot'] = 1
-
-    # FINAL ALIGNMENT: Match order AND force numeric type (converts Booleans to 1.0/0.0)
-    input_df = input_df.reindex(columns=model_features).fillna(0).astype(float)
-
+        se = st.selectbox("Season", ['springer', 'summer', 'fall', 'winter'])
+        we = st.selectbox("Weather", ['Clear', 'Mist', 'Light Snow'])
+    
     if st.button("Run Prediction"):
-        res = model.predict(input_df)[0]
+        input_data = pd.DataFrame([{'yr': 2012, 'mnth': mnth, 'hr': hr, 'temp': te, 'hum': hu}])
+        for f in model_features: 
+            if f not in input_data.columns: input_data[f] = 0
+        input_data = input_data.reindex(columns=model_features).fillna(0).astype(float)
+        res = model.predict(input_data)[0]
         st.success(f"Predicted Hourly Rental Demand: {int(res)} units")
