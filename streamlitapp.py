@@ -33,7 +33,7 @@ st.sidebar.title("Bike Rental Dashboard")
 page = st.sidebar.radio("Navigation", ["Insights & Model Validation", "Interactive Prediction"])
 
 if page == "Insights & Model Validation":
-    st.title("🚴‍♀️ Model Insights & Performance Validation")
+    st.title("🚴\u200D♀️ Model Insights & Performance Validation")
     
     col1, col2, col3 = st.columns(3)
     with col1: st.metric("Model Type", "Gradient Boosting")
@@ -55,15 +55,12 @@ if page == "Insights & Model Validation":
 
     with tab2:
         st.subheader("Feature Importance (What drives the model?)")
-        # Based on training results
         feat_imp = pd.DataFrame({
             'Feature': ['Hour', 'Rush Hour', 'Year', 'Temp', 'Humidity', 'Working Day', 'Month'],
             'Importance': [0.48, 0.13, 0.08, 0.08, 0.04, 0.04, 0.02]
         }).sort_values('Importance', ascending=True)
         fig_imp = px.bar(feat_imp, x='Importance', y='Feature', orientation='h', color='Importance')
         st.plotly_chart(fig_imp, use_container_width=True)
-        
-        st.write("**Validation Note:** The model was validated using a 20% hold-out test set. Gradient Boosting showed the highest accuracy (95%) compared to Random Forest and Decision Trees.")
 
 elif page == "Interactive Prediction":
     st.title("🧠 Demand Prediction Engine")
@@ -88,7 +85,6 @@ elif page == "Interactive Prediction":
 
     irh = 1 if wd == 'Working Day' and ((7 <= hr <= 9) or (16 <= hr <= 19)) else 0
     
-    # Prepare input
     input_data = {
         'yr': 2012.0, 'mnth': float(mnth), 'hr': int(hr), 'weekday': int(wk), 
         'temp': float(te), 'atemp': float(at), 'hum': float(hu), 'windspeed': float(wi), 
@@ -96,7 +92,6 @@ elif page == "Interactive Prediction":
     }
     
     input_df = pd.DataFrame([input_data])
-    # One-hot encoding logic
     for f in model_features: 
         if f not in input_df.columns: input_df[f] = 0
     
@@ -111,8 +106,8 @@ elif page == "Interactive Prediction":
     if tt == 'Cold': input_df['temp_type_Cold'] = 1
     elif tt == 'Hot': input_df['temp_type_Hot'] = 1
 
-    # CRITICAL FIX: Ensure columns are in EXACT order expected by sklearn
-    input_df = input_df.reindex(columns=model_features, fill_value=0)
+    # FINAL ALIGNMENT: Match order AND force numeric type (converts Booleans to 1.0/0.0)
+    input_df = input_df.reindex(columns=model_features).fillna(0).astype(float)
 
     if st.button("Run Prediction"):
         res = model.predict(input_df)[0]
