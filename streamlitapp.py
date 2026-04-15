@@ -68,21 +68,33 @@ if page == "Insights & Model Performance":
     fig1.update_layout(hovermode="x unified")
     st.plotly_chart(fig1, use_container_width=True)
 
+    # --- Reconstruct 'season_category' for plotting ---
+    df_final['season_category'] = 'fall' # 'fall' was the base case (dropped first)
+    df_final.loc[df_final['season_springer'] == 1, 'season_category'] = 'springer'
+    df_final.loc[df_final['season_summer'] == 1, 'season_category'] = 'summer'
+    df_final.loc[df_final['season_winter'] == 1, 'season_category'] = 'winter'
+
     # Plot 2: Average Demand by Season
     st.subheader("Average Bike Rentals per Season")
-    seasonal_demand = df_final.groupby('season')['cnt'].mean().reset_index()
-    fig2 = px.bar(seasonal_demand, x='season', y='cnt',
-                   labels={'season': 'Season', 'cnt': 'Average Rental Count'},
+    seasonal_demand = df_final.groupby('season_category')['cnt'].mean().reset_index()
+    fig2 = px.bar(seasonal_demand, x='season_category', y='cnt',
+                   labels={'season_category': 'Season', 'cnt': 'Average Rental Count'},
                    title='Average Bike Rentals per Season',
-                   color='season', color_discrete_sequence=px.colors.qualitative.Pastel)
+                   color='season_category', color_discrete_sequence=px.colors.qualitative.Pastel)
     st.plotly_chart(fig2, use_container_width=True)
+
+    # --- Reconstruct 'weathersit_category' for plotting ---
+    df_final['weathersit_category'] = 'Clear' # 'Clear' was the base case (dropped first)
+    df_final.loc[df_final['weathersit_Mist'] == 1, 'weathersit_category'] = 'Mist'
+    df_final.loc[df_final['weathersit_Light Rain/Snow'] == 1, 'weathersit_category'] = 'Light Rain/Snow'
+    df_final.loc[df_final['weathersit_Moderate Rain/Snow'] == 1, 'weathersit_category'] = 'Moderate Rain/Snow'
 
     # Plot 3: Demand Distribution by Weather Situation
     st.subheader("Demand Distribution across Weather Conditions")
-    fig3 = px.box(df_final, x='weathersit', y='cnt',
-                  labels={'weathersit': 'Weather Situation', 'cnt': 'Rental Count'},
+    fig3 = px.box(df_final, x='weathersit_category', y='cnt',
+                  labels={'weathersit_category': 'Weather Situation', 'cnt': 'Rental Count'},
                   title='Demand Distribution across Weather Conditions',
-                  color='weathersit', color_discrete_sequence=px.colors.qualitative.Dark)
+                  color='weathersit_category', color_discrete_sequence=px.colors.qualitative.Dark)
     st.plotly_chart(fig3, use_container_width=True)
 
     # Plot 4: Correlation: Normalized Temperature vs Total Rentals
