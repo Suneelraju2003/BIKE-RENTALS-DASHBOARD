@@ -115,4 +115,4 @@ elif page == "Interactive Prediction":
 
     if st.button("Run Prediction"):
         res = model.predict(input_df)[0]
-        st.success(f"Predicted Hourly Rental Demand: {int(res)} units")
+        st.success(f"Predicted Rental Demand: {int(res)} units")
